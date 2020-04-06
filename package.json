@@ -1,0 +1,11 @@
+{
+  "name": "auto-youtube-channel",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/joaomaranhao/auto-youtube-channel.git",
+  "author": "João Maranhão <joaofelipemaranhao@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "readline-sync": "^1.4.10"
+  }
+}
