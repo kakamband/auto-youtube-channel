@@ -2,6 +2,18 @@ const algorithmia = require('algorithmia')
 const algorithmiaApiKey = require('../credentials/algorithmia.json').apiKey
 const sentenceBoundaryDetection = require('sbd')
 
+const watsonCredentials = require('../credentials/watson-nlu.json')
+
+const NaturalLanguageUnderstandingV1 = require('ibm-watson/natural-language-understanding/v1');
+const { IamAuthenticator } = require('ibm-watson/auth');
+ 
+const nlu = new NaturalLanguageUnderstandingV1({
+  authenticator: new IamAuthenticator({ apikey: watsonCredentials.apikey }),
+  version: '2018-04-05',
+  url: watsonCredentials.url
+});
+
+
 const robot = async (content) => {
 
 
@@ -54,9 +66,44 @@ const robot = async (content) => {
         })
     }
 
+    const fetchWatsonAndReturnKeywords = async (sentence) => {
+        return new Promise((resolve, reject) => {
+            nlu.analyze({
+                text: sentence,
+                features: {
+                    keywords: {}
+                }
+            }, (error, response) => {
+                if (error) {
+                    reject(error)
+                    return
+                }
+            
+                const keywords = response.result.keywords.map((keyword) => {
+                    return keyword.text
+                })
+
+                resolve(keywords)
+            })
+        })
+    }
+
+    const limitMaximumSentences = () => {
+        content.sentences = content.sentences.slice(0, content.maximumSentences)
+    }
+
+    const fetchKeywordsOfAllSentences = async (content) => {
+        for (const sentence of content.sentences) {
+            sentence.keywords = await fetchWatsonAndReturnKeywords(sentence.text)
+        }
+    }
+
+
     await fetchContentFromWikipedia(content)
     sanitizeContent(content)
     breakContentIntoSentence(content)
+    limitMaximumSentences(content)
+    await fetchKeywordsOfAllSentences(content)
 }
 
 module.exports = robot
